@@ -12,6 +12,13 @@ export interface Drop {
   images: string[]
 }
 
+export interface ShippingEvent {
+  status: string
+  description: string
+  location: string
+  timestamp: Date
+}
+
 export interface Order {
   id: string
   dropId: string
@@ -22,4 +29,24 @@ export interface Order {
   orderDate: Date
   status: 'pending' | 'confirmed' | 'shipped' | 'delivered'
   trackingNumber?: string
+  courier?: string
+  deliveryAddress?: string
+  estimatedDelivery?: Date
+  shippingEvents?: ShippingEvent[]
 }
+
+export interface User {
+  id: string
+  name: string
+  email: string
+  avatarUrl?: string
+  joinedAt: Date
+  notificationsEnabled: boolean
+}
+
+export type Page =
+  | 'home'
+  | 'orders'
+  | 'mypage'
+  | 'cart'
+  | { name: 'delivery'; orderId: string }

@@ -1,4 +1,12 @@
-import type { Drop, Order } from '@/types'
+import type { Drop, Order, User } from '@/types'
+
+export const mockUser: User = {
+  id: 'u-001',
+  name: '손범수',
+  email: 'sbs8239@gmail.com',
+  joinedAt: new Date('2025-11-01'),
+  notificationsEnabled: true,
+}
 
 export const mockDrops: Drop[] = [
   {
@@ -131,8 +139,66 @@ export const mockOrders: Order[] = [
     dropImage: 'https://images.unsplash.com/photo-1634320498229-0b8c7d009fe7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxuaWtlJTIwam9yZGFuJTIwc25lYWtlcnN8ZW58MXx8fHwxNzY5MjgwMTA4fDA&ixlib=rb-4.1.0&q=80&w=1080',
     size: '270',
     price: 180000,
-    orderDate: new Date('2026-01-20T14:05:00'),
+    orderDate: new Date('2026-04-10T14:05:00'),
     status: 'shipped',
     trackingNumber: '1234567890',
+    courier: 'CJ대한통운',
+    deliveryAddress: '서울특별시 강남구 테헤란로 123, 101동 405호',
+    estimatedDelivery: new Date('2026-04-21T18:00:00'),
+    shippingEvents: [
+      { status: '배송 출발', description: '배송기사가 배송을 시작했습니다', location: '서울 강남 배송센터', timestamp: new Date('2026-04-17T08:30:00') },
+      { status: '배송 중', description: '배송지 인근 배송센터에 도착했습니다', location: '서울 강남 배송센터', timestamp: new Date('2026-04-16T22:15:00') },
+      { status: '간선 이동 중', description: '간선 차량으로 이동 중입니다', location: '서울 허브 터미널', timestamp: new Date('2026-04-16T11:40:00') },
+      { status: '집화 완료', description: '상품이 택배사에 인계되었습니다', location: '경기 성남 물류센터', timestamp: new Date('2026-04-15T17:00:00') },
+      { status: '결제 완료', description: '주문이 확인되었습니다', location: 'DROPZONE', timestamp: new Date('2026-04-10T14:05:00') },
+    ],
+  },
+  {
+    id: 'ORD-002',
+    dropId: '3',
+    dropName: 'Nike Dunk Low "Panda"',
+    dropImage: 'https://images.unsplash.com/photo-1692620334887-06a4051bcf26?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxuaWtlJTIwZHVuayUyMHNuZWFrZXJzfGVufDF8fHx8MTc2OTI5MTM5OXww&ixlib=rb-4.1.0&q=80&w=1080',
+    size: '260',
+    price: 130000,
+    orderDate: new Date('2026-03-28T16:03:00'),
+    status: 'delivered',
+    trackingNumber: '9876543210',
+    courier: '로젠택배',
+    deliveryAddress: '서울특별시 마포구 홍대입구로 45, 2층',
+    shippingEvents: [
+      { status: '배송 완료', description: '상품이 배송 완료되었습니다', location: '서울특별시 마포구', timestamp: new Date('2026-04-01T14:22:00') },
+      { status: '배송 출발', description: '배송기사가 배송을 시작했습니다', location: '서울 마포 배송센터', timestamp: new Date('2026-04-01T09:05:00') },
+      { status: '집화 완료', description: '상품이 택배사에 인계되었습니다', location: '경기 부천 물류센터', timestamp: new Date('2026-03-30T16:30:00') },
+      { status: '결제 완료', description: '주문이 확인되었습니다', location: 'DROPZONE', timestamp: new Date('2026-03-28T16:03:00') },
+    ],
+  },
+  {
+    id: 'ORD-003',
+    dropId: '2',
+    dropName: 'Yeezy Boost 350 V2 "Beluga"',
+    dropImage: 'https://images.unsplash.com/photo-1655982182278-c6eb38815a06?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhZGlkYXMlMjB5ZWV6eSUyMHNuZWFrZXJzfGVufDF8fHx8MTc2OTMxODgwMnww&ixlib=rb-4.1.0&q=80&w=1080',
+    size: '275',
+    price: 220000,
+    orderDate: new Date('2026-04-18T15:30:00'),
+    status: 'confirmed',
+    deliveryAddress: '부산광역시 해운대구 우동 1234-5',
+    estimatedDelivery: new Date('2026-04-23T18:00:00'),
+    shippingEvents: [
+      { status: '결제 완료', description: '주문이 확인되어 배송 준비 중입니다', location: 'DROPZONE', timestamp: new Date('2026-04-18T15:30:00') },
+    ],
+  },
+  {
+    id: 'ORD-004',
+    dropId: '4',
+    dropName: 'Air Max 1 "White/Grey"',
+    dropImage: 'https://images.unsplash.com/photo-1543652711-77eeb35ae548?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjBzbmVha2VycyUyMHdoaXRlfGVufDF8fHx8MTc2OTI3ODM5Nnww&ixlib=rb-4.1.0&q=80&w=1080',
+    size: '265',
+    price: 150000,
+    orderDate: new Date('2026-04-19T09:12:00'),
+    status: 'pending',
+    deliveryAddress: '대전광역시 유성구 대학로 99',
+    shippingEvents: [
+      { status: '결제 대기', description: '결제 확인 중입니다', location: 'DROPZONE', timestamp: new Date('2026-04-19T09:12:00') },
+    ],
   },
 ]

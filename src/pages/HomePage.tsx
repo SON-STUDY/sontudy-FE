@@ -1,23 +1,35 @@
 import { useState, useEffect } from 'react'
-import { Search, ShoppingBag, Home, Package, User, Flame, CalendarClock, Bell } from 'lucide-react'
+import { Search, Flame, CalendarClock, Bookmark } from 'lucide-react'
 import { DropCard } from '@/components/DropCard'
+import { DropDetailModal } from '@/components/DropDetailModal'
+import { PurchaseModal } from '@/components/PurchaseModal'
+import { AppHeader, AppBottomNav } from '@/components/AppNav'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
-import { mockDrops } from '@/data/mockData'
+import { useDrops } from '@/hooks/useDrops'
+import { usePickList } from '@/hooks/usePickList'
 import { cn } from '@/lib/utils'
-import type { Drop } from '@/types'
+import type { Drop, Page } from '@/types'
 
 const BRANDS = ['전체', 'Nike', 'Adidas', 'New Balance', 'Converse']
 
-export function HomePage() {
+interface HomePageProps {
+  onNavigate: (page: Page) => void
+}
+
+export function HomePage({ onNavigate }: HomePageProps) {
+  const { data: drops, isLoading, error } = useDrops()
   const [selectedBrand, setSelectedBrand] = useState('전체')
   const [searchQuery, setSearchQuery] = useState('')
+  const [selectedDrop, setSelectedDrop] = useState<Drop | null>(null)
+  const [purchaseInfo, setPurchaseInfo] = useState<{ drop: Drop; size: string } | null>(null)
 
-  const liveDrops = mockDrops.filter((d) => d.status === 'live')
-  const upcomingDrops = mockDrops
+  const liveDrops = drops.filter((d) => d.status === 'live')
+  const upcomingDrops = drops
     .filter((d) => d.status === 'upcoming')
     .sort((a, b) => a.dropDate.getTime() - b.dropDate.getTime())
 
-  const filteredDrops = mockDrops.filter((drop) => {
+  const filteredDrops = drops.filter((drop) => {
     const matchesBrand = selectedBrand === '전체' || drop.brand === selectedBrand
     const matchesSearch =
       searchQuery === '' ||
@@ -26,45 +38,33 @@ export function HomePage() {
     return matchesBrand && matchesSearch
   })
 
-  const handleDropClick = (_drop: Drop) => {
-    // 상세 모달 — 추후 구현
+  const handleDropClick = (drop: Drop) => setSelectedDrop(drop)
+
+  const handlePurchase = (dropId: string, size: string) => {
+    const drop = drops.find((d) => d.id === dropId)
+    if (!drop) return
+    setSelectedDrop(null)
+    setPurchaseInfo({ drop, size })
   }
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <header className="sticky top-0 z-40 bg-background/95 backdrop-blur border-b border-border">
-        <div className="max-w-screen-xl mx-auto px-4 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Flame className="w-6 h-6 text-red-500" />
-            <span className="font-bold text-lg tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>
-              DROPZONE
-            </span>
+      <AppHeader
+        currentPage="home"
+        onNavigate={onNavigate}
+        searchSlot={
+          <div className="relative w-full">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="브랜드, 모델명 검색"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-4 h-9 rounded-lg bg-muted text-sm outline-none focus:ring-2 focus:ring-ring"
+            />
           </div>
-
-          <div className="hidden md:flex items-center gap-1 flex-1 max-w-sm mx-8">
-            <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="브랜드, 모델명 검색"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 h-9 rounded-lg bg-muted text-sm outline-none focus:ring-2 focus:ring-ring"
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="relative">
-              <ShoppingBag className="w-5 h-5" />
-            </Button>
-            <Button variant="ghost" size="icon">
-              <User className="w-5 h-5" />
-            </Button>
-          </div>
-        </div>
-      </header>
+        }
+      />
 
       <main className="flex-1 max-w-screen-xl mx-auto w-full px-4 pb-24 md:pb-8">
         {/* Mobile Search */}
@@ -81,110 +81,153 @@ export function HomePage() {
           </div>
         </div>
 
-        {/* Hero Banner — Live Drops */}
-        {liveDrops.length > 0 && (
-          <section className="py-4 md:py-6">
-            <div className="relative rounded-2xl overflow-hidden bg-black h-48 md:h-72">
-              <img
-                src={liveDrops[0].image}
-                alt={liveDrops[0].name}
-                className="w-full h-full object-cover opacity-60"
-              />
-              <div className="absolute inset-0 flex flex-col justify-end p-5 md:p-8">
-                <div className="inline-flex items-center gap-1.5 bg-red-600 text-white text-xs font-bold px-2.5 py-1 rounded-full w-fit mb-2 animate-pulse">
-                  <Flame className="w-3 h-3" />
-                  LIVE NOW
+        {error && <ErrorBanner message={error.message} />}
+
+        {isLoading ? (
+          <HomePageSkeleton />
+        ) : (
+          <>
+            {/* Hero Banner — Live Drops */}
+            {liveDrops.length > 0 && (
+              <section className="py-4 md:py-6">
+                <div className="relative rounded-2xl overflow-hidden bg-black h-48 md:h-72">
+                  <img
+                    src={liveDrops[0].image}
+                    alt={liveDrops[0].name}
+                    className="w-full h-full object-cover opacity-60"
+                  />
+                  <div className="absolute inset-0 flex flex-col justify-end p-5 md:p-8">
+                    <div className="inline-flex items-center gap-1.5 bg-red-600 text-white text-xs font-bold px-2.5 py-1 rounded-full w-fit mb-2 animate-pulse">
+                      <Flame className="w-3 h-3" />
+                      LIVE NOW
+                    </div>
+                    <h1 className="text-white text-xl md:text-3xl font-extrabold mb-1 drop-shadow-lg">
+                      {liveDrops[0].name}
+                    </h1>
+                    <p className="text-white/80 text-sm mb-3">
+                      {liveDrops[0].brand} · ₩{liveDrops[0].price.toLocaleString()}
+                    </p>
+                    <Button className="w-fit text-sm" onClick={() => handleDropClick(liveDrops[0])}>
+                      지금 응모하기
+                    </Button>
+                  </div>
                 </div>
-                <h1 className="text-white text-xl md:text-3xl font-extrabold mb-1 drop-shadow-lg">
-                  {liveDrops[0].name}
-                </h1>
-                <p className="text-white/80 text-sm mb-3">
-                  {liveDrops[0].brand} · ₩{liveDrops[0].price.toLocaleString()}
-                </p>
-                <Button className="w-fit text-sm" onClick={() => handleDropClick(liveDrops[0])}>
-                  지금 응모하기
-                </Button>
+              </section>
+            )}
+
+            {/* Upcoming Drops */}
+            {upcomingDrops.length > 0 && (
+              <section className="py-2 md:py-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <CalendarClock className="w-4 h-4 text-muted-foreground" />
+                  <h2 className="text-base font-bold">예정된 드랍</h2>
+                  <span className="text-sm font-normal text-muted-foreground">{upcomingDrops.length}개</span>
+                </div>
+                <div className="flex gap-3 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none' }}>
+                  {upcomingDrops.map((drop) => (
+                    <UpcomingDropCard key={drop.id} drop={drop} onClick={() => handleDropClick(drop)} />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Brand Filter */}
+            <section className="py-2 md:py-4">
+              <div className="flex gap-2 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none' }}>
+                {BRANDS.map((brand) => (
+                  <button
+                    key={brand}
+                    onClick={() => setSelectedBrand(brand)}
+                    className={cn(
+                      'flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-colors',
+                      selectedBrand === brand
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                    )}
+                  >
+                    {brand}
+                  </button>
+                ))}
               </div>
-            </div>
-          </section>
+            </section>
+
+            {/* Drop Grid */}
+            <section className="py-2">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-base md:text-lg font-bold">
+                  {selectedBrand === '전체' ? '전체 드랍' : `${selectedBrand} 드랍`}
+                  <span className="ml-2 text-sm font-normal text-muted-foreground">{filteredDrops.length}개</span>
+                </h2>
+              </div>
+              {filteredDrops.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+                  <Search className="w-12 h-12 mb-3 opacity-30" />
+                  <p className="text-sm">검색 결과가 없습니다.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+                  {filteredDrops.map((drop) => (
+                    <DropCard key={drop.id} drop={drop} onClick={() => handleDropClick(drop)} />
+                  ))}
+                </div>
+              )}
+            </section>
+          </>
         )}
-
-        {/* Upcoming Drops */}
-        {upcomingDrops.length > 0 && (
-          <section className="py-2 md:py-4">
-            <div className="flex items-center gap-2 mb-3">
-              <CalendarClock className="w-4 h-4 text-muted-foreground" />
-              <h2 className="text-base font-bold">예정된 드랍</h2>
-              <span className="text-sm font-normal text-muted-foreground">{upcomingDrops.length}개</span>
-            </div>
-            <div className="flex gap-3 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none' }}>
-              {upcomingDrops.map((drop) => (
-                <UpcomingDropCard key={drop.id} drop={drop} onClick={() => handleDropClick(drop)} />
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Brand Filter */}
-        <section className="py-2 md:py-4">
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-            {BRANDS.map((brand) => (
-              <button
-                key={brand}
-                onClick={() => setSelectedBrand(brand)}
-                className={cn(
-                  'flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-colors',
-                  selectedBrand === brand
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-                )}
-              >
-                {brand}
-              </button>
-            ))}
-          </div>
-        </section>
-
-        {/* Section Title */}
-        <section className="py-2">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base md:text-lg font-bold">
-              {selectedBrand === '전체' ? '전체 드랍' : `${selectedBrand} 드랍`}
-              <span className="ml-2 text-sm font-normal text-muted-foreground">
-                {filteredDrops.length}개
-              </span>
-            </h2>
-          </div>
-
-          {filteredDrops.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-              <Search className="w-12 h-12 mb-3 opacity-30" />
-              <p className="text-sm">검색 결과가 없습니다.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-              {filteredDrops.map((drop) => (
-                <DropCard key={drop.id} drop={drop} onClick={() => handleDropClick(drop)} />
-              ))}
-            </div>
-          )}
-        </section>
       </main>
 
-      {/* Mobile Bottom Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-background border-t border-border">
-        <div className="flex items-center justify-around h-16">
-          <NavItem icon={<Home className="w-5 h-5" />} label="홈" active />
-          <NavItem icon={<Flame className="w-5 h-5" />} label="드랍" />
-          <NavItem icon={<Package className="w-5 h-5" />} label="주문" />
-          <NavItem icon={<User className="w-5 h-5" />} label="마이" />
-        </div>
-      </nav>
+      {/* Modals */}
+      {selectedDrop && (
+        <DropDetailModal
+          drop={selectedDrop}
+          onClose={() => setSelectedDrop(null)}
+          onPurchase={handlePurchase}
+        />
+      )}
+      {purchaseInfo && (
+        <PurchaseModal
+          drop={purchaseInfo.drop}
+          size={purchaseInfo.size}
+          onClose={() => setPurchaseInfo(null)}
+          onBack={() => {
+            const drop = purchaseInfo.drop
+            setPurchaseInfo(null)
+            setSelectedDrop(drop)
+          }}
+          onNavigateToOrders={() => onNavigate('orders')}
+        />
+      )}
+
+      <AppBottomNav currentPage="home" onNavigate={onNavigate} />
+    </div>
+  )
+}
+
+function HomePageSkeleton() {
+  return (
+    <>
+      <Skeleton className="mt-4 md:mt-6 h-48 md:h-72 rounded-2xl" />
+      <div className="py-4 flex gap-3 overflow-hidden">
+        {[1, 2, 3].map((i) => <Skeleton key={i} className="flex-shrink-0 w-52 h-44 rounded-xl" />)}
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4 py-2">
+        {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="aspect-square rounded-xl" />)}
+      </div>
+    </>
+  )
+}
+
+function ErrorBanner({ message }: { message: string }) {
+  return (
+    <div className="my-4 px-4 py-3 rounded-xl bg-destructive/10 text-destructive text-sm">
+      {message}
     </div>
   )
 }
 
 function UpcomingDropCard({ drop, onClick }: { drop: Drop; onClick: () => void }) {
+  const { ids, toggle } = usePickList()
+  const isPicked = ids.includes(drop.id)
   const calc = () => {
     const diff = drop.dropDate.getTime() - Date.now()
     if (diff <= 0) return { days: 0, hours: 0, minutes: 0, seconds: 0 }
@@ -231,11 +274,14 @@ function UpcomingDropCard({ drop, onClick }: { drop: Drop; onClick: () => void }
         <div className="flex items-center justify-between">
           <span className="text-sm font-bold">₩{drop.price.toLocaleString()}</span>
           <button
-            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-            onClick={(e) => e.stopPropagation()}
+            className={cn(
+              'flex items-center gap-1 text-xs transition-colors',
+              isPicked ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
+            )}
+            onClick={(e) => { e.stopPropagation(); toggle(drop.id) }}
           >
-            <Bell className="w-3 h-3" />
-            알림
+            <Bookmark className={cn('w-3 h-3', isPicked && 'fill-current')} />
+            {isPicked ? '픽됨' : '픽'}
           </button>
         </div>
         <p className="text-xs text-muted-foreground mt-1.5">
@@ -255,16 +301,3 @@ function CountdownUnit({ value, label }: { value: number; label: string }) {
   )
 }
 
-function NavItem({ icon, label, active = false }: { icon: React.ReactNode; label: string; active?: boolean }) {
-  return (
-    <button
-      className={cn(
-        'flex flex-col items-center gap-1 px-4 py-2 text-xs font-medium transition-colors',
-        active ? 'text-primary' : 'text-muted-foreground'
-      )}
-    >
-      {icon}
-      {label}
-    </button>
-  )
-}

@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
-import { Clock, Bell } from 'lucide-react'
+import { Clock, Bookmark } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { usePickList } from '@/hooks/usePickList'
+import { cn } from '@/lib/utils'
 import type { Drop } from '@/types'
 
 interface DropCardProps {
@@ -52,6 +54,9 @@ function StatusBadge({ drop }: { drop: Drop }) {
 }
 
 export function DropCard({ drop, onClick }: DropCardProps) {
+  const { ids, toggle } = usePickList()
+  const isPicked = ids.includes(drop.id)
+
   return (
     <Card
       className="overflow-hidden cursor-pointer transition-all duration-200 hover:shadow-lg hover:-translate-y-1 active:scale-95"
@@ -90,15 +95,18 @@ export function DropCard({ drop, onClick }: DropCardProps) {
         </div>
         <div className="flex items-center justify-between text-xs text-muted-foreground">
           <span>재고 {drop.totalStock.toLocaleString()}켤레</span>
-          <Button
-            size="sm"
-            variant="ghost"
-            className="h-7 px-2 text-xs"
-            onClick={(e) => { e.stopPropagation() }}
-          >
-            <Bell className="w-3 h-3 mr-1" />
-            알림
-          </Button>
+          {drop.status === 'upcoming' && (
+            <Button
+              size="sm"
+              variant="ghost"
+              className={cn('h-7 px-2 text-xs', isPicked && 'text-primary')}
+              onClick={(e) => { e.stopPropagation(); toggle(drop.id) }}
+              title={isPicked ? '픽 리스트에서 제거' : '픽 리스트에 추가'}
+            >
+              <Bookmark className={cn('w-3 h-3 mr-1', isPicked && 'fill-current')} />
+              {isPicked ? '픽됨' : '픽'}
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>
