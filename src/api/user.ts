@@ -18,11 +18,8 @@ export async function login(email: string, password: string): Promise<void> {
   setToken(body.data.accessToken)
 }
 
-const isDevOrTest = import.meta.env.MODE === 'development' || import.meta.env.MODE === 'test'
-
 export async function signUp(name: string, email: string, password: string): Promise<void> {
-  const endpoint = isDevOrTest ? '/api/admin' : '/api/user'
-  await apiFetch(endpoint, {
+  await apiFetch('/api/user', {
     method: 'POST',
     body: JSON.stringify({ name, email, password }),
   })

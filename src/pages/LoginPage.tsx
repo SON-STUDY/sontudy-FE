@@ -1,7 +1,5 @@
 import { useState } from 'react'
-import { Eye, EyeOff, Loader2, ShieldCheck } from 'lucide-react'
-
-const isDevOrTest = import.meta.env.MODE === 'development' || import.meta.env.MODE === 'test'
+import { Eye, EyeOff, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -52,12 +50,6 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
           <p className="mt-1 text-sm text-muted-foreground">한정판 스니커즈 드랍 플랫폼</p>
         </div>
 
-        {isDevOrTest && (
-          <div className="flex items-center gap-2 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-700">
-            <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
-            <span><strong>{import.meta.env.MODE}</strong> 환경 — 회원가입 시 어드민 계정으로 생성됩니다</span>
-          </div>
-        )}
 
         {/* 탭 */}
         <div className="flex rounded-xl bg-muted p-1">
