@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import {
   ChevronRight, ReceiptText, Bell, Settings,
-  HeadphonesIcon, LogOut, User as UserIcon,
+  HeadphonesIcon, LogOut, User as UserIcon, Store,
 } from 'lucide-react'
 import { AppHeader, AppBottomNav } from '@/components/AppNav'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useMe } from '@/hooks/useMe'
 import { useOrders } from '@/hooks/useOrders'
+import { applyForSeller } from '@/api/user'
+import { clearToken } from '@/lib/auth'
 import { cn } from '@/lib/utils'
 import type { Page } from '@/types'
 
@@ -17,6 +19,26 @@ interface MyPageProps {
 export function MyPage({ onNavigate }: MyPageProps) {
   const { data: user, isLoading: userLoading } = useMe()
   const { data: orders } = useOrders()
+  const [sellerApplying, setSellerApplying] = useState(false)
+  const [sellerMsg, setSellerMsg] = useState<string | null>(null)
+
+  const handleLogout = () => {
+    clearToken()
+    onNavigate('login')
+  }
+
+  const handleSellerApply = async () => {
+    setSellerApplying(true)
+    setSellerMsg(null)
+    try {
+      await applyForSeller()
+      setSellerMsg('판매자 신청이 완료되었습니다.')
+    } catch (err: unknown) {
+      setSellerMsg(err instanceof Error ? err.message : '신청에 실패했습니다')
+    } finally {
+      setSellerApplying(false)
+    }
+  }
 
   const stats = {
     total: orders.length,
@@ -86,6 +108,11 @@ export function MyPage({ onNavigate }: MyPageProps) {
             right={<NotificationToggle defaultOn={user?.notificationsEnabled ?? true} />}
           />
           <MenuItem
+            icon={<Store className="w-4 h-4" />}
+            label={sellerApplying ? '신청 중...' : '판매자 신청'}
+            onClick={handleSellerApply}
+          />
+          <MenuItem
             icon={<Settings className="w-4 h-4" />}
             label="계정 설정"
           />
@@ -95,11 +122,16 @@ export function MyPage({ onNavigate }: MyPageProps) {
           />
         </section>
 
+        {sellerMsg && (
+          <p className="text-sm text-center text-muted-foreground px-2">{sellerMsg}</p>
+        )}
+
         <section className="rounded-2xl border border-border bg-card overflow-hidden">
           <MenuItem
             icon={<LogOut className="w-4 h-4 text-destructive" />}
             label="로그아웃"
             labelClass="text-destructive"
+            onClick={handleLogout}
           />
         </section>
 

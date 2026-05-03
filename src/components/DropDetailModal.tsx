@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { X, Bookmark, Package, Clock, Flame } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Skeleton } from '@/components/ui/skeleton'
 import { usePickList } from '@/hooks/usePickList'
 import type { Drop } from '@/types'
 import { cn } from '@/lib/utils'
@@ -10,6 +11,7 @@ interface DropDetailModalProps {
   drop: Drop
   onClose: () => void
   onPurchase: (dropId: string, size: string) => void
+  isLoadingDetail?: boolean
 }
 
 function useCountdownText(dropDate: Date) {
@@ -31,7 +33,7 @@ function useCountdownText(dropDate: Date) {
   return t
 }
 
-export function DropDetailModal({ drop, onClose, onPurchase }: DropDetailModalProps) {
+export function DropDetailModal({ drop, onClose, onPurchase, isLoadingDetail = false }: DropDetailModalProps) {
   const [selectedSize, setSelectedSize] = useState<string | null>(null)
   const remaining = useCountdownText(drop.dropDate)
   const isLive = drop.status === 'live' || remaining === null
@@ -160,6 +162,11 @@ export function DropDetailModal({ drop, onClose, onPurchase }: DropDetailModalPr
           {/* 사이즈 선택 */}
           <div>
             <h4 className="text-sm font-semibold mb-3">사이즈 선택</h4>
+            {isLoadingDetail ? (
+              <div className="grid grid-cols-3 gap-2">
+                {[1, 2, 3, 4, 5, 6].map((i) => <Skeleton key={i} className="h-16 rounded-xl" />)}
+              </div>
+            ) : (
             <div className="grid grid-cols-3 gap-2">
               {drop.sizes.map((s) => {
                 const outOfStock = s.stock === 0
@@ -185,6 +192,7 @@ export function DropDetailModal({ drop, onClose, onPurchase }: DropDetailModalPr
                 )
               })}
             </div>
+            )}
           </div>
 
           {/* CTA */}

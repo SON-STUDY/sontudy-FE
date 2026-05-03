@@ -1,52 +1,98 @@
-import { mockOrders } from '@/data/mockData'
+import { apiFetch } from '@/lib/apiClient'
 import type { Order } from '@/types'
 
-// ─── 교체 지점 ────────────────────────────────────────────────────────────────
-// 실제 API 연동 시 아래 함수 본문만 fetch 호출로 바꾸면 됩니다.
-// 예)
-//   export async function getOrders(): Promise<Order[]> {
-//     const res = await fetch('/api/orders', { credentials: 'include' })
-//     if (!res.ok) throw new Error('주문 목록을 불러오지 못했습니다')
-//     return res.json()
-//   }
-// ─────────────────────────────────────────────────────────────────────────────
+interface OrderHistoryResponse {
+  data: { content: any[] }
+}
+
+interface CheckoutResponse {
+  data: {
+    orderId: string
+    paymentId: string
+    orderStatus: string
+    paymentStatus: string
+    failureCode?: string
+    failureMessage?: string
+  }
+}
+
+type DeliveryStatus = 'READY' | 'DELIVERING' | 'DELIVERED' | 'RETURNED'
+const DELIVERY_STATUS_MAP: Record<DeliveryStatus, Order['status']> = {
+  READY: 'confirmed',
+  DELIVERING: 'shipped',
+  DELIVERED: 'delivered',
+  RETURNED: 'delivered',
+}
+
+function mapOrderItem(d: any): Order {
+  let status: Order['status'] = 'pending'
+  if (d.orderStatus === 'PURCHASED') {
+    status = DELIVERY_STATUS_MAP[d.deliveryStatus as DeliveryStatus] ?? 'confirmed'
+  }
+
+  return {
+    id: d.orderId,
+    dropId: '',
+    dropName: d.productName ?? '',
+    dropImage: d.productImageUrl ?? '',
+    size: String(d.size ?? ''),
+    price: d.amount ?? 0,
+    orderDate: new Date(d.orderedAt),
+    status,
+    trackingNumber: d.trackingNumber ?? undefined,
+    courier: undefined,
+    deliveryAddress: undefined,
+    estimatedDelivery: undefined,
+    shippingEvents: undefined,
+  }
+}
 
 export async function getOrders(): Promise<Order[]> {
-  return [...mockOrders].sort((a, b) => b.orderDate.getTime() - a.orderDate.getTime())
+  const body = await apiFetch<OrderHistoryResponse>('/api/orders?size=50')
+  return (body.data.content ?? []).map(mapOrderItem)
 }
 
 export async function getOrder(id: string): Promise<Order | null> {
-  return mockOrders.find((o) => o.id === id) ?? null
+  const orders = await getOrders()
+  return orders.find((o) => o.id === id) ?? null
 }
 
 export interface CreateOrderPayload {
-  dropId: string
-  size: string
-  address: string
-  phone: string
+  productOptionId: string
+  paymentMethod: 'CARD' | 'ACCOUNT_TRANSFER' | 'VIRTUAL_ACCOUNT' | 'SIMPLE_PAY'
+  amount: number
+  size?: string
+  address?: string
+  phone?: string
 }
 
 export async function createOrder(payload: CreateOrderPayload): Promise<Order> {
-  // 실제 API:
-  //   const res = await fetch('/api/orders', {
-  //     method: 'POST',
-  //     headers: { 'Content-Type': 'application/json' },
-  //     body: JSON.stringify(payload),
-  //   })
-  //   if (!res.ok) throw new Error('주문에 실패했습니다')
-  //   return res.json()
+  const idempotencyKey = crypto.randomUUID()
+  const body = await apiFetch<CheckoutResponse>('/api/orders/checkout', {
+    method: 'POST',
+    body: JSON.stringify({
+      productOptionId: payload.productOptionId,
+      paymentMethod: payload.paymentMethod,
+      amount: payload.amount,
+      idempotencyKey,
+    }),
+  })
+  const d = body.data
 
-  const drop = mockOrders.find((o) => o.dropId === payload.dropId)
-  const newOrder: Order = {
-    id: `ORD-${Date.now()}`,
-    dropId: payload.dropId,
-    dropName: drop?.dropName ?? '',
-    dropImage: drop?.dropImage ?? '',
-    size: payload.size,
-    price: 0,
+  if (d.paymentStatus === 'FAILED' || d.orderStatus === 'FAILED') {
+    throw new Error(d.failureMessage ?? '결제에 실패했습니다')
+  }
+
+  return {
+    id: d.orderId,
+    dropId: '',
+    dropName: '',
+    dropImage: '',
+    size: payload.size ?? '',
+    price: payload.amount,
     orderDate: new Date(),
-    status: 'pending',
+    status: d.orderStatus === 'PURCHASED' ? 'confirmed' : 'pending',
+    trackingNumber: undefined,
     deliveryAddress: payload.address,
   }
-  return newOrder
 }

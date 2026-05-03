@@ -4,7 +4,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useCreateOrder } from '@/hooks/useCreateOrder'
+import type { CreateOrderPayload } from '@/api/orders'
 import type { Drop } from '@/types'
+import { cn } from '@/lib/utils'
 
 interface PurchaseModalProps {
   drop: Drop
@@ -16,9 +18,17 @@ interface PurchaseModalProps {
 
 const DELIVERY_FEE = 3000
 
+const PAYMENT_METHODS: { value: CreateOrderPayload['paymentMethod']; label: string }[] = [
+  { value: 'CARD', label: '신용/체크카드' },
+  { value: 'SIMPLE_PAY', label: '간편결제' },
+  { value: 'ACCOUNT_TRANSFER', label: '계좌이체' },
+  { value: 'VIRTUAL_ACCOUNT', label: '가상계좌' },
+]
+
 export function PurchaseModal({ drop, size, onClose, onBack, onNavigateToOrders }: PurchaseModalProps) {
   const [address, setAddress] = useState('')
   const [phone, setPhone] = useState('')
+  const [paymentMethod, setPaymentMethod] = useState<CreateOrderPayload['paymentMethod']>('CARD')
   const { mutate, isLoading, error } = useCreateOrder()
 
   useEffect(() => {
@@ -32,11 +42,22 @@ export function PurchaseModal({ drop, size, onClose, onBack, onNavigateToOrders 
     return () => { document.body.style.overflow = '' }
   }, [])
 
-  const total = drop.price + DELIVERY_FEE
+  const option = drop.sizes.find((s) => s.size === size)
+  const unitPrice = option?.stock != null ? (drop.sizes.find(s => s.size === size) ? drop.price : 0) : drop.price
+  const total = unitPrice + DELIVERY_FEE
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const order = await mutate({ dropId: drop.id, size, address, phone })
+    if (!option?.optionId) return
+
+    const order = await mutate({
+      productOptionId: option.optionId,
+      paymentMethod,
+      amount: total,
+      size,
+      address,
+      phone,
+    })
     if (order) {
       onClose()
       onNavigateToOrders()
@@ -75,6 +96,28 @@ export function PurchaseModal({ drop, size, onClose, onBack, onNavigateToOrders 
               <p className="text-xs text-muted-foreground">{drop.brand}</p>
               <p className="text-sm font-semibold line-clamp-1">{drop.name}</p>
               <p className="text-xs text-muted-foreground mt-0.5">사이즈 {size}mm</p>
+            </div>
+          </div>
+
+          {/* 결제 수단 */}
+          <div className="space-y-2">
+            <Label>결제 수단</Label>
+            <div className="grid grid-cols-2 gap-2">
+              {PAYMENT_METHODS.map((pm) => (
+                <button
+                  key={pm.value}
+                  type="button"
+                  onClick={() => setPaymentMethod(pm.value)}
+                  className={cn(
+                    'py-2.5 px-3 rounded-xl border-2 text-sm font-medium transition-all',
+                    paymentMethod === pm.value
+                      ? 'border-primary bg-primary/5 text-primary'
+                      : 'border-border hover:border-foreground/40'
+                  )}
+                >
+                  {pm.label}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -126,7 +169,11 @@ export function PurchaseModal({ drop, size, onClose, onBack, onNavigateToOrders 
 
           {/* 결제 버튼 */}
           <div className="pb-2 space-y-2">
-            <Button type="submit" className="w-full h-12 text-base font-bold" disabled={isLoading}>
+            <Button
+              type="submit"
+              className="w-full h-12 text-base font-bold"
+              disabled={isLoading || !option?.optionId}
+            >
               <CreditCard className="w-4 h-4 mr-2" />
               {isLoading ? '처리 중...' : '결제하기'}
             </Button>

@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
 import { useDrops } from '@/hooks/useDrops'
 import { usePickList } from '@/hooks/usePickList'
+import { getDrop } from '@/api/drops'
 import { cn } from '@/lib/utils'
 import type { Drop, Page } from '@/types'
 
@@ -22,6 +23,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
   const [selectedBrand, setSelectedBrand] = useState('전체')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedDrop, setSelectedDrop] = useState<Drop | null>(null)
+  const [isLoadingDetail, setIsLoadingDetail] = useState(false)
   const [purchaseInfo, setPurchaseInfo] = useState<{ drop: Drop; size: string } | null>(null)
 
   const liveDrops = drops.filter((d) => d.status === 'live')
@@ -38,10 +40,17 @@ export function HomePage({ onNavigate }: HomePageProps) {
     return matchesBrand && matchesSearch
   })
 
-  const handleDropClick = (drop: Drop) => setSelectedDrop(drop)
+  const handleDropClick = async (drop: Drop) => {
+    setSelectedDrop(drop)
+    setIsLoadingDetail(true)
+    const detail = await getDrop(drop.id)
+    if (detail) setSelectedDrop(detail)
+    setIsLoadingDetail(false)
+  }
 
   const handlePurchase = (dropId: string, size: string) => {
-    const drop = drops.find((d) => d.id === dropId)
+    // selectedDrop에 optionId가 포함된 전체 정보가 있으므로 우선 사용
+    const drop = selectedDrop?.id === dropId ? selectedDrop : drops.find((d) => d.id === dropId)
     if (!drop) return
     setSelectedDrop(null)
     setPurchaseInfo({ drop, size })
@@ -180,8 +189,9 @@ export function HomePage({ onNavigate }: HomePageProps) {
       {selectedDrop && (
         <DropDetailModal
           drop={selectedDrop}
-          onClose={() => setSelectedDrop(null)}
+          onClose={() => { setSelectedDrop(null); setIsLoadingDetail(false) }}
           onPurchase={handlePurchase}
+          isLoadingDetail={isLoadingDetail}
         />
       )}
       {purchaseInfo && (

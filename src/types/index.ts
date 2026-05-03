@@ -7,7 +7,7 @@ export interface Drop {
   image: string
   dropDate: Date
   totalStock: number
-  sizes: { size: string; stock: number }[]
+  sizes: { size: string; stock: number; optionId?: string }[]
   status: 'upcoming' | 'live' | 'sold-out'
   images: string[]
 }
@@ -49,4 +49,5 @@ export type Page =
   | 'orders'
   | 'mypage'
   | 'cart'
+  | 'login'
   | { name: 'delivery'; orderId: string }
