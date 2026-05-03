@@ -5,6 +5,7 @@ import { DeliveryPage } from '@/pages/DeliveryPage'
 import { MyPage } from '@/pages/MyPage'
 import { CartPage } from '@/pages/CartPage'
 import { LoginPage } from '@/pages/LoginPage'
+import { AdminPage } from '@/pages/AdminPage'
 import { isAuthenticated } from '@/lib/auth'
 import type { Page } from '@/types'
 
@@ -32,6 +33,10 @@ export default function App() {
 
   if (page === 'cart') {
     return <CartPage onNavigate={setPage} />
+  }
+
+  if (page === 'admin') {
+    return <AdminPage onNavigate={setPage} />
   }
 
   if (typeof page === 'object' && page.name === 'delivery') {

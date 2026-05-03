@@ -18,8 +18,11 @@ export async function login(email: string, password: string): Promise<void> {
   setToken(body.data.accessToken)
 }
 
+const isDevOrTest = import.meta.env.MODE === 'development' || import.meta.env.MODE === 'test'
+
 export async function signUp(name: string, email: string, password: string): Promise<void> {
-  await apiFetch('/api/user', {
+  const endpoint = isDevOrTest ? '/api/admin' : '/api/user'
+  await apiFetch(endpoint, {
     method: 'POST',
     body: JSON.stringify({ name, email, password }),
   })
@@ -38,5 +41,6 @@ export async function getMe(): Promise<User> {
     email: d.email,
     joinedAt: new Date(),
     notificationsEnabled: false,
+    role: d.role,
   }
 }

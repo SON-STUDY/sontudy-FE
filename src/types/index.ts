@@ -42,6 +42,7 @@ export interface User {
   avatarUrl?: string
   joinedAt: Date
   notificationsEnabled: boolean
+  role?: string
 }
 
 export type Page =
@@ -50,4 +51,5 @@ export type Page =
   | 'mypage'
   | 'cart'
   | 'login'
+  | 'admin'
   | { name: 'delivery'; orderId: string }

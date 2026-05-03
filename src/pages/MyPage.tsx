@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import {
   ChevronRight, ReceiptText, Bell, Settings,
-  HeadphonesIcon, LogOut, User as UserIcon, Store,
+  HeadphonesIcon, LogOut, User as UserIcon, Store, ShieldCheck,
 } from 'lucide-react'
 import { AppHeader, AppBottomNav } from '@/components/AppNav'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -124,6 +124,17 @@ export function MyPage({ onNavigate }: MyPageProps) {
 
         {sellerMsg && (
           <p className="text-sm text-center text-muted-foreground px-2">{sellerMsg}</p>
+        )}
+
+        {user?.role === 'ADMIN' && (
+          <section className="rounded-2xl border border-primary/30 bg-primary/5 overflow-hidden">
+            <MenuItem
+              icon={<ShieldCheck className="w-4 h-4 text-primary" />}
+              label="관리자 페이지"
+              labelClass="text-primary font-semibold"
+              onClick={() => onNavigate('admin')}
+            />
+          </section>
         )}
 
         <section className="rounded-2xl border border-border bg-card overflow-hidden">
