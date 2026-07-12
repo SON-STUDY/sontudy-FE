@@ -165,17 +165,26 @@ function MenuItem({
   onClick?: () => void
   right?: React.ReactNode
 }) {
+  const className = cn(
+    'w-full flex items-center gap-3 px-4 py-3.5 text-left transition-colors',
+    onClick ? 'hover:bg-muted' : 'cursor-default'
+  )
+
+  if (right) {
+    return (
+      <div className={className}>
+        <span className="text-muted-foreground shrink-0">{icon}</span>
+        <span className={cn('flex-1 text-sm font-medium', labelClass)}>{label}</span>
+        <span className="shrink-0">{right}</span>
+      </div>
+    )
+  }
+
   return (
-    <button
-      onClick={onClick}
-      className={cn(
-        'w-full flex items-center gap-3 px-4 py-3.5 text-left transition-colors',
-        onClick ? 'hover:bg-muted' : 'cursor-default'
-      )}
-    >
+    <button onClick={onClick} className={className}>
       <span className="text-muted-foreground shrink-0">{icon}</span>
       <span className={cn('flex-1 text-sm font-medium', labelClass)}>{label}</span>
-      {right ?? (onClick && <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />)}
+      {onClick && <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />}
     </button>
   )
 }
@@ -184,15 +193,18 @@ function NotificationToggle({ defaultOn }: { defaultOn: boolean }) {
   const [on, setOn] = useState(defaultOn)
   return (
     <button
+      type="button"
+      role="switch"
+      aria-checked={on}
       onClick={(e) => { e.stopPropagation(); setOn((v) => !v) }}
       className={cn(
-        'relative w-10 h-6 rounded-full transition-colors shrink-0',
+        'relative inline-flex h-6 w-11 shrink-0 items-center rounded-full p-0.5 transition-colors ring-1 ring-inset ring-border',
         on ? 'bg-primary' : 'bg-muted'
       )}
     >
       <span className={cn(
-        'absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform',
-        on ? 'translate-x-5' : 'translate-x-1'
+        'inline-block h-5 w-5 rounded-full bg-white shadow transition-transform will-change-transform',
+        on ? 'translate-x-5' : 'translate-x-0'
       )} />
     </button>
   )

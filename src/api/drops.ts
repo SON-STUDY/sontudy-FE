@@ -28,7 +28,23 @@ interface DetailResponse {
   }
 }
 
+// 목록 응답의 재고 필드명이 백엔드에 따라 다를 수 있어(남은 재고 우선) 후보 키를 순서대로 탐색한다.
+// 셋 다 없으면 옵션 재고 합계로 폴백한다.
+const STOCK_KEYS = ['remainingStock', 'remainStock', 'stockQuantity', 'totalStock', 'stock'] as const
+
+function pickStock(d: any): number {
+  for (const key of STOCK_KEYS) {
+    if (typeof d[key] === 'number') return d[key]
+  }
+  if (Array.isArray(d.options)) {
+    return d.options.reduce((sum: number, o: { stock?: number }) => sum + (o.stock ?? 0), 0)
+  }
+  return 0
+}
+
 function mapListItem(d: any, defaultStatus: Drop['status']): Drop {
+  const totalStock = pickStock(d)
+
   return {
     id: d.id,
     name: d.name,
@@ -37,7 +53,7 @@ function mapListItem(d: any, defaultStatus: Drop['status']): Drop {
     price: d.price ?? 0,
     image: d.imageUrl ?? '',
     dropDate: new Date(d.releasedAt),
-    totalStock: d.stock ?? 0,
+    totalStock,
     sizes: [],
     status: d.status ? (STATUS_MAP[d.status] ?? defaultStatus) : defaultStatus,
     images: d.imageUrl ? [d.imageUrl] : [],

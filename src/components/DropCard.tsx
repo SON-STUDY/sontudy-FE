@@ -45,12 +45,16 @@ function StatusBadge({ drop }: { drop: Drop }) {
     return <Badge className="bg-red-600 hover:bg-red-700 text-white">🔥 LIVE</Badge>
   }
 
+  // 상품 이미지 위에 겹쳐지므로, 배경 색과 무관하게 항상 읽히도록
+  // 반투명 다크 칩 + 흰 텍스트 + 흰 링으로 대비를 고정한다.
+  const chipClass = 'bg-black/70 text-white shadow-sm backdrop-blur-sm ring-1 ring-inset ring-white/25'
+
   if (remaining.days > 0) {
-    return <Badge variant="outline">D-{remaining.days}</Badge>
+    return <Badge className={chipClass}>D-{remaining.days}</Badge>
   }
 
   const hm = `${String(remaining.hours).padStart(2, '0')}:${String(remaining.minutes).padStart(2, '0')}:${String(remaining.seconds).padStart(2, '0')}`
-  return <Badge variant="outline">{hm}</Badge>
+  return <Badge className={cn('tabular-nums', chipClass)}>{hm}</Badge>
 }
 
 export function DropCard({ drop, onClick }: DropCardProps) {
